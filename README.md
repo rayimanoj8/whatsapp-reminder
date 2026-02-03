@@ -1,12 +1,14 @@
-# WhatsApp Webhook Server
+# WhatsApp Work Status Reminder
 
-A simple Express.js server to receive WhatsApp webhook notifications and store the latest message.
+An Express.js server that automatically sends daily WhatsApp messages asking for work status and receives webhook notifications.
 
 ## Features
 
+- ✅ **Automated Daily Messages** - Sends work status reminder every day at 10:30 AM IST
 - ✅ WhatsApp webhook verification endpoint
 - ✅ Receives and stores the latest WhatsApp message
 - ✅ GET endpoint to retrieve the latest message
+- ✅ Manual trigger endpoint for testing
 - ✅ Deployed on Vercel (serverless-compatible)
 
 ## API Endpoints
@@ -76,6 +78,58 @@ curl https://your-app.vercel.app/webhooks
   }
 }
 ```
+
+---
+
+### 4. Send Message Manually (GET)
+**Endpoint:** `GET /send-message`
+
+Manually trigger the work status message (for testing without waiting for the scheduled time).
+
+**Example:**
+```bash
+curl https://your-app.vercel.app/send-message
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Work status message sent successfully",
+  "data": {
+    "messaging_product": "whatsapp",
+    "contacts": [...],
+    "messages": [...]
+  }
+}
+```
+
+---
+
+## Automated Daily Messages
+
+The server automatically sends a WhatsApp interactive message every day at **10:30 AM IST** asking for work status with the following options:
+
+- 🏠 Work from home
+- 🏢 Work from office  
+- ⏰ Half day leave
+- 🌴 Leave today
+
+### Cron Schedule
+
+The cron job is configured in `index.js`:
+```javascript
+cron.schedule("30 10 * * *", () => {
+  sendWorkStatusMessage();
+}, {
+  timezone: "Asia/Kolkata"
+});
+```
+
+To change the schedule time, modify the cron expression:
+- Format: `minute hour day month weekday`
+- Example: `"0 9 * * *"` = 9:00 AM daily
+- Example: `"30 14 * * 1-5"` = 2:30 PM on weekdays only
 
 ---
 
