@@ -1,25 +1,16 @@
 // index.js
 import express from "express";
-import fs from "fs";
-import path from "path";
 
 const app = express();
 app.use(express.json());
 
-const WEBHOOK_FILE = path.join(process.cwd(), "webhooks.json");
+// In-memory storage for webhooks (works on Vercel)
+// Note: Data will be lost on redeployment, but persists during runtime
+let webhookData = { webhooks: [] };
 
-// Initialize the JSON file if it doesn't exist
-if (!fs.existsSync(WEBHOOK_FILE)) {
-  fs.writeFileSync(WEBHOOK_FILE, JSON.stringify({ webhooks: [] }, null, 2));
-}
-
-// Webhook POST endpoint - receives data and writes to JSON file
+// Webhook POST endpoint - receives data and stores in memory
 app.post("/webhook", (req, res) => {
   try {
-    // Read existing data
-    const fileData = fs.readFileSync(WEBHOOK_FILE, "utf8");
-    const jsonData = JSON.parse(fileData);
-
     // Add new webhook data with timestamp
     const webhookEntry = {
       timestamp: new Date().toISOString(),
@@ -28,15 +19,13 @@ app.post("/webhook", (req, res) => {
       query: req.query,
     };
 
-    jsonData.webhooks.push(webhookEntry);
-
-    // Write back to file
-    fs.writeFileSync(WEBHOOK_FILE, JSON.stringify(jsonData, null, 2));
+    webhookData.webhooks.push(webhookEntry);
 
     res.status(200).json({
       success: true,
       message: "Webhook data saved successfully",
       entry: webhookEntry,
+      total: webhookData.webhooks.length,
     });
   } catch (error) {
     console.error("Error saving webhook data:", error);
@@ -48,13 +37,13 @@ app.post("/webhook", (req, res) => {
   }
 });
 
-// GET endpoint - returns all webhook data from JSON file
+// GET endpoint - returns all webhook data from memory
 app.get("/webhooks", (req, res) => {
   try {
-    const fileData = fs.readFileSync(WEBHOOK_FILE, "utf8");
-    const jsonData = JSON.parse(fileData);
-
-    res.status(200).json(jsonData);
+    res.status(200).json({
+      ...webhookData,
+      total: webhookData.webhooks.length,
+    });
   } catch (error) {
     console.error("Error reading webhook data:", error);
     res.status(500).json({
