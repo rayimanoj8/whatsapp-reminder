@@ -5,6 +5,7 @@ An Express.js server that automatically sends daily WhatsApp messages asking for
 ## Features
 
 - ✅ **Automated Daily Messages** - Sends work status reminder every day at 10:30 AM IST
+- ✅ **Automatic Timesheet Filling** - Automatically updates Google Sheets based on user replies
 - ✅ WhatsApp webhook verification endpoint
 - ✅ Receives and stores the latest WhatsApp message
 - ✅ GET endpoint to retrieve the latest message
@@ -201,6 +202,61 @@ Then set the environment variable in Vercel dashboard.
 - The server uses **in-memory storage**, so data will be lost on redeployment
 - Only the **latest message** is stored (previous messages are overwritten)
 - For persistent storage, consider using a database like MongoDB, PostgreSQL, or Vercel KV
+
+---
+
+## Google Sheets Integration
+
+The system automatically fills a Google Sheets timesheet based on user replies to the WhatsApp messages.
+
+### How It Works
+
+1. **User Receives Message**: Every day at 10:30 AM, users receive a WhatsApp message asking for their work status
+2. **User Replies**: User selects an option (e.g., "Work from home", "Office", "Leave")
+3. **Webhook Processes Reply**: The webhook receives the reply and extracts:
+   - User's name
+   - Selected status
+   - Current date
+4. **Sheet Updated**: The system automatically updates the Google Sheet with the appropriate code
+
+### Status Codes
+
+| Status | Code | Description |
+|--------|------|-------------|
+| Work from home | H | Working from home |
+| Office | W | Working from office |
+| Leave | L | On leave |
+| Half day | HD | Half day work |
+| Sick leave | SL | Sick leave |
+| Casual leave | CL | Casual leave |
+| Holiday | HO | Public holiday |
+| Absent | A | Absent |
+
+### Sheet Structure
+
+The Google Sheet should have:
+- **Column A**: Employee ID
+- **Column B**: Name
+- **Columns C-AF**: Days 1-31 of the month
+
+### Setup Google Sheets
+
+1. Create a Google Cloud project and enable Google Sheets API
+2. Create a service account and download the credentials
+3. Save credentials as `service-account.json` in the project root
+4. Share your Google Sheet with the service account email
+5. Update the spreadsheet ID in `src/services/timesheetService.js`
+
+For detailed setup instructions, see [GOOGLE_SHEETS_SETUP.md](GOOGLE_SHEETS_SETUP.md)
+
+### Testing
+
+Test the webhook processing with:
+```bash
+node test-webhook-processing.js
+```
+
+For more details, see [WEBHOOK_INTEGRATION.md](WEBHOOK_INTEGRATION.md)
 
 ---
 

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets Updater</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input::placeholder {
+            color: #999;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-update {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .btn-update:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-update:active {
+            transform: translateY(0);
+        }
+
+        .btn-read {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-read:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-clear {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(244, 67, 54, 0.4);
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .response.success {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+
+        .response.error {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+
+        .response-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .response-content {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 8px;
+            word-break: break-all;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+
+        .row-col-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Google Sheets Updater</h1>
+        <p class="subtitle">Update your Google Sheet with ease</p>
+
+        <div class="info-box">
+            💡 <strong>Tip:</strong> Column can be a letter (A, B, C) or number (1, 2, 3)
+        </div>
+
+        <form id="sheetForm">
+            <div class="row-col-group">
+                <div class="form-group">
+                    <label for="row">Row Number</label>
+                    <input type="number" id="row" name="row" placeholder="e.g., 1" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="column">Column</label>
+                    <input type="text" id="column" name="column" placeholder="e.g., A or 1" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="value">Value</label>
+                <input type="text" id="value" name="value" placeholder="Enter the value to insert" required>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-update">✏️ Update Cell</button>
+                <button type="button" class="btn-read" onclick="readCell()">📖 Read Cell</button>
+                <button type="button" class="btn-clear" onclick="clearForm()">🗑️ Clear</button>
+            </div>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="response" id="response"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+
+        const form = document.getElementById('sheetForm');
+        const loading = document.getElementById('loading');
+        const response = document.getElementById('response');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await updateCell();
+        });
+
+        async function updateCell() {
+            const row = document.getElementById('row').value;
+            const column = document.getElementById('column').value;
+            const value = document.getElementById('value').value;
+
+            showLoading();
+            hideResponse();
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/sheet/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ row: parseInt(row), column, value }),
+                });
+
+                const data = await res.json();
+                hideLoading();
+
+                if (data.success) {
+                    showResponse('success', 'Cell Updated Successfully! ✅', 
+                        `Updated cell ${data.data.range} with value: "${value}"`);
+                } else {
+                    showResponse('error', 'Update Failed ❌', data.error || 'Unknown error');
+                }
+            } catch (error) {
+                hideLoading();
+                showResponse('error', 'Network Error ❌', error.message);
+            }
+        }
+
+        async function readCell() {
+            const row = document.getElementById('row').value;
+            const column = document.getElementById('column').value;
+
+            if (!row || !column) {
+                showResponse('error', 'Missing Input ❌', 'Please enter both row and column');
+                return;
+            }
+
+            showLoading();
+            hideResponse();
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/sheet/read?row=${row}&column=${column}`);
+                const data = await res.json();
+                hideLoading();
+
+                if (data.success) {
+                    showResponse('success', 'Cell Read Successfully! 📖', 
+                        `Cell ${data.data.range} contains: "${data.data.value}"`);
+                } else {
+                    showResponse('error', 'Read Failed ❌', data.error || 'Unknown error');
+                }
+            } catch (error) {
+                hideLoading();
+                showResponse('error', 'Network Error ❌', error.message);
+            }
+        }
+
+        function clearForm() {
+            form.reset();
+            hideResponse();
+        }
+
+        function showLoading() {
+            loading.classList.add('active');
+        }
+
+        function hideLoading() {
+            loading.classList.remove('active');
+        }
+
+        function showResponse(type, title, content) {
+            response.className = `response ${type}`;
+            response.innerHTML = `
+                <div class="response-title">${title}</div>
+                <div class="response-content">${content}</div>
+            `;
+        }
+
+        function hideResponse() {
+            response.className = 'response';
+            response.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
